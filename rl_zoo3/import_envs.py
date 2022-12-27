@@ -60,3 +60,8 @@ for env_id in MaskVelocityWrapper.velocity_indices.keys():
         id=f"{name}NoVel-v{version}",
         entry_point=create_no_vel_env(env_id),
     )
+
+register(
+   	id='SnakeGameAIGym-v0',
+   	entry_point='snake.snake_game_ai_gym:SnakeGameAIGym',
+)
