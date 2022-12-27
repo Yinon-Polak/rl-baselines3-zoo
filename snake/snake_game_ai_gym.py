@@ -153,11 +153,16 @@ class SnakeGameAIGym(gym.Env):
         # 3. check if game over
         reward = 0
         game_over = False
-        if self.is_collision() or self.frame_iteration > 100 * len(self.snake):
+        should_early_terminate = self.frame_iteration > 100 * len(self.snake)
+        if self.is_collision() or should_early_terminate:
             game_over = True
             self.n_games += 1
             reward = self.negative_reward
-            return self._get_state(), reward, game_over, {"score": self.score}
+            info = {"score": self.score}
+            if should_early_terminate:
+                info["TimeLimit.truncated"] = True
+
+            return self._get_state(), reward, game_over, info
 
         # 4. place new food or just move
         if self.head == self.food:
