@@ -18,6 +18,7 @@ runs
 hub
 *.mp4
 *.json
+credentials.colab.ini
 
 # Setuptools distribution and build folders.
 /dist/
