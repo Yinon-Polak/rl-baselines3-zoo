@@ -1,6 +1,6 @@
 SnakeGameAIGym-v0:
   policy: snake.small_cnn_policy.ActorCriticSmallCnnPolicy
-  n_envs: 8
+  n_envs: 64
   n_steps: 10
   n_epochs: 4
   batch_size: 256
