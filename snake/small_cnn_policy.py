@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional, List, Union, Dict, Type, Any
 
 import gym
@@ -145,11 +146,12 @@ class ActorCriticSmallCnnPolicy(ActorCriticPolicy):
         optimizer_class: Type[th.optim.Optimizer] = th.optim.Adam,
         optimizer_kwargs: Optional[Dict[str, Any]] = None,
     ):
+        warnings.warn("setting constant net_arch=[]")
         super().__init__(
             observation_space,
             action_space,
             lr_schedule,
-            net_arch,
+            [],
             activation_fn,
             ortho_init,
             use_sde,
