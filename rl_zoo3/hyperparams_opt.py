@@ -15,8 +15,8 @@ def sample_ppo_params(trial: optuna.Trial) -> Dict[str, Any]:
     :param trial:
     :return:
     """
-    batch_size = trial.suggest_categorical("batch_size", [8, 16, 32, 64, 128, 256, 512])
-    n_steps = trial.suggest_categorical("n_steps", [8, 16, 32, 64, 128, 256, 512, 1024, 2048])
+    batch_size = trial.suggest_categorical("batch_size", [128, 256, 512])  # [8, 16, 32, 64, 128, 256, 512]
+    n_steps = trial.suggest_categorical("n_steps", [8, 16, 32, 64, 128, 256])  # [8, 16, 32, 64, 128, 256, 512, 1024, 2048]
     gamma = trial.suggest_categorical("gamma", [0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999])
     learning_rate = trial.suggest_loguniform("learning_rate", 1e-5, 1)
     lr_schedule = "constant"
@@ -48,10 +48,11 @@ def sample_ppo_params(trial: optuna.Trial) -> Dict[str, Any]:
 
     # Independent networks usually work best
     # when not working with images
-    net_arch = {
-        "small": [dict(pi=[64, 64], vf=[64, 64])],
-        "medium": [dict(pi=[256, 256], vf=[256, 256])],
-    }[net_arch]
+    # net_arch = {
+    #     "small": [dict(pi=[64, 64], vf=[64, 64])],
+    #     "medium": [dict(pi=[256, 256], vf=[256, 256])],
+    # }[net_arch]
+    net_arch = []
 
     activation_fn = {"tanh": nn.Tanh, "relu": nn.ReLU, "elu": nn.ELU, "leaky_relu": nn.LeakyReLU}[activation_fn]
 
