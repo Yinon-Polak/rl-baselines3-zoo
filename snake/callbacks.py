@@ -24,7 +24,9 @@ class StopTrainingOnMaxIsLoopingCount(BaseCallback):
         # Check that the `dones`, `infos` local variables are defined
         assert "dones" in self.locals, "`dones` variable is not defined, please check your code next to `callback.on_step()`"
         assert "infos" in self.locals, "`infos` variable is not defined, please check your code next to `callback.on_step()`"
+        print(self.n_episodes)
         self.n_episodes += np.sum(self.locals["dones"]).item()
+        print(self.n_episodes)
         self.n_is_looping += len([done and info["is_looping"] for info, done in zip(self.locals["infos"], self.locals["dones"])])
         is_looping_ratio = self.n_is_looping / self.n_episodes
         continue_training = not (self.n_episodes > self.min_episodes_count_before_termination and self.max_is_looping_ratio_threshold > is_looping_ratio)
