@@ -16,7 +16,7 @@ class StopTrainingOnMaxIsLoopingCount(BaseCallback):
         self.max_is_looping_ratio_threshold = max_is_looping_ratio_threshold
         self.min_episodes_count_before_termination = min_episodes_count_before_termination
         self.n_is_looping = 0
-        self.n_episodes = 0
+        self.n_episodes = 1
         self.step_count = 0
 
     def _on_step(self) -> bool:
