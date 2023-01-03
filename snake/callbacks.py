@@ -11,7 +11,7 @@ class StopTrainingOnMaxIsLoopingCount(BaseCallback):
         reaching ``max_episodes``
     """
 
-    def __init__(self, max_is_looping_ratio_threshold: int, min_episodes_count_before_termination: int, verbose: int = 0):
+    def __init__(self, max_is_looping_ratio_threshold: int, min_episodes_count_before_termination: int = 1_000, verbose: int = 0):
         super().__init__(verbose=verbose)
         self.max_is_looping_ratio_threshold = max_is_looping_ratio_threshold
         self.min_episodes_count_before_termination = min_episodes_count_before_termination
