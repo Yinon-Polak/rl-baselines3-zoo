@@ -51,18 +51,20 @@ class NatureSmallCNN(BaseFeaturesExtractor):
             "https://stable-baselines3.readthedocs.io/en/master/common/env_checker.html"
         )
 
-        print(f"initial_layer_out_channels ={initial_layer_out_channels}")
-        print(f"deep_layers_out_channels = {deep_layers_out_channels}")
-        print(f"kernel_size_1={kernel_size_1}")
-        print(f"kernel_size_2={kernel_size_2}")
-        print(f"kernel_size_3={kernel_size_3}")
-        print(f"padding_1={padding_1}")
-        print(f"padding_2={padding_2}")
-        print(f"padding_3={padding_3}")
-        print(f"stride_1={stride_1}")
-        print(f"stride_2={stride_2}")
-        print(f"stride_3={stride_3}")
-        print(f"activation func: {activation_func.__name__}")
+        print(
+            f"initial_layer_out_channels ={initial_layer_out_channels}"
+            f"deep_layers_out_channels = {deep_layers_out_channels}"
+            f"kernel_size_1={kernel_size_1}"
+            f"kernel_size_2={kernel_size_2}"
+            f"kernel_size_3={kernel_size_3}"
+            f"padding_1={padding_1}"
+            f"padding_2={padding_2}"
+            f"padding_3={padding_3}"
+            f"stride_1={stride_1}"
+            f"stride_2={stride_2}"
+            f"stride_3={stride_3}"
+            f"activation func: {activation_func.__name__}"
+        )
 
         n_input_channels = observation_space.shape[0]
         modules = [
