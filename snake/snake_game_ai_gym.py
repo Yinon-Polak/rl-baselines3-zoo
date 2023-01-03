@@ -31,8 +31,8 @@ KWARGS = {
     "w": 640,
     "h": 480,
     "use_pygame": False,
-    "positive_reward": 10,
-    "negative_reward": -10,
+    "positive_reward": 1,
+    "negative_reward": -1,
     "verbose": 0,
 }
 
