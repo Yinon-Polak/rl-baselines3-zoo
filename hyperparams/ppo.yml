@@ -15,6 +15,7 @@ SnakeGameAIGym-v0:
         verbose: 1
     - snake.callbacks.StopTrainingOnMaxIsLoopingCount:
         max_is_looping_ratio_threshold: 0.9
+        min_episodes_count_before_termination: 1_000
         verbose: 1
 
 atari:
