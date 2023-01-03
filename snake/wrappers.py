@@ -19,7 +19,7 @@ class Direction(Enum):
 CLOCK_WISE = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
 
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class Point:
     x: int
     y: int

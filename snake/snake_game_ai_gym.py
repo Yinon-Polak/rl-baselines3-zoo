@@ -159,6 +159,7 @@ class SnakeGameAIGym(gym.Env):
             self.n_games += 1
             reward = self.negative_reward
             info = {"score": self.score}
+            info["is_looping"] = len(set(self.last_trail[:100])) < 6
             if should_early_terminate:
                 info["TimeLimit.truncated"] = True
 
@@ -180,7 +181,9 @@ class SnakeGameAIGym(gym.Env):
         self.pygame_controller.clock_tick()
         # 6. return game over and score
 
-        return self._get_state(), reward, game_over, {"score": self.score}
+        # info = {"score": self.score, "is_looping": False}
+        info = {"score": self.score}
+        return self._get_state(), reward, game_over, info
 
     def is_collision(self, collision_type: CollisionType = CollisionType.BOTH, pt: Point = None):
         if pt is None:
