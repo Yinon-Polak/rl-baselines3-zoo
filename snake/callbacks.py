@@ -27,7 +27,7 @@ class StopTrainingOnMaxIsLoopingCount(BaseCallback):
         self.n_episodes += np.sum(self.locals["dones"]).item()
         self.n_is_looping += len([done and info["is_looping"] for info, done in zip(self.locals["infos"], self.locals["dones"])])
         is_looping_ratio = self.n_is_looping / self.n_episodes
-        continue_training = self.n_episodes > self.min_episodes_count_before_termination and self.max_is_looping_ratio_threshold > is_looping_ratio
+        continue_training = not (self.n_episodes > self.min_episodes_count_before_termination and self.max_is_looping_ratio_threshold > is_looping_ratio)
 
         if self.verbose >= 1 and self.step_count % 1_000 == 0:
             print(
