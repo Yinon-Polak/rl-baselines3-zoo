@@ -6,7 +6,8 @@ class StopTrainingOnMaxIsLoopingCount(BaseCallback):
     """
     Stop the training once a maximum number of looping is passed.
     For multiple environments presumes that, the desired behavior is that the max_is_looping_count = ``max_is_looping_count * n_envs``
-    :param max_is_looping_count: Maximum number of episodes to stop training.
+    :param max_is_looping_ratio_threshold: Maximum number of episodes to stop training.
+    :param min_episodes_count_before_termination: Minimum number of episodes before exiting.
     :param verbose: Verbosity level: 0 for no output, 1 for indicating information about when training ended by
         reaching ``max_episodes``
     """
@@ -16,7 +17,7 @@ class StopTrainingOnMaxIsLoopingCount(BaseCallback):
         self.max_is_looping_ratio_threshold = max_is_looping_ratio_threshold
         self.min_episodes_count_before_termination = min_episodes_count_before_termination
         self.n_is_looping = 0
-        self.n_episodes = 0
+        self.n_episodes = 1
         self.step_count = 0
 
     def _on_step(self) -> bool:
@@ -25,9 +26,9 @@ class StopTrainingOnMaxIsLoopingCount(BaseCallback):
         assert "dones" in self.locals, "`dones` variable is not defined, please check your code next to `callback.on_step()`"
         assert "infos" in self.locals, "`infos` variable is not defined, please check your code next to `callback.on_step()`"
         self.n_episodes += np.sum(self.locals["dones"]).item()
-        self.n_is_looping += len([done and info["is_looping"] for info, done in zip(self.locals["infos"], self.locals["dones"])])
+        self.n_is_looping += [done and info["is_looping"] for info, done in zip(self.locals["infos"], self.locals["dones"])].count(True)
         is_looping_ratio = self.n_is_looping / self.n_episodes
-        continue_training = self.n_episodes > self.min_episodes_count_before_termination and self.max_is_looping_ratio_threshold > is_looping_ratio
+        continue_training = not (self.n_episodes > self.min_episodes_count_before_termination and is_looping_ratio > self.max_is_looping_ratio_threshold)
 
         if self.verbose >= 1 and self.step_count % 1_000 == 0:
             print(
