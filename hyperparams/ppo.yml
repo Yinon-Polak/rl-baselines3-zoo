@@ -14,7 +14,8 @@ SnakeGameAIGym-v0:
         max_episodes: 200000
         verbose: 1
     - snake.callbacks.StopTrainingOnMaxIsLoopingCount:
-        max_is_looping_ratio_threshold: 0.9
+        max_is_looping_ratio_threshold: 0.3
+        min_episodes_count_before_termination: 800
         verbose: 1
 
 atari:
