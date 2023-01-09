@@ -72,15 +72,15 @@ class NatureSmallCNN(BaseFeaturesExtractor):
             activation_func(),
             nn.Conv2d(initial_layer_out_channels, deep_layers_out_channels, kernel_size=kernel_size_2, stride=stride_2, padding=padding_2),
             activation_func(),
-            nn.Flatten(),
         ]
-        # if kernel_size_3:
-        #     modules.extend(
-        #         [
-        #             nn.Conv2d(deep_layers_out_channels, deep_layers_out_channels, kernel_size=kernel_size_3, stride=stride_3, padding=padding_3),
-        #             activation_func(),
-        #         ]
-        #     )
+        if kernel_size_3:
+            modules.extend(
+                [
+                    nn.Conv2d(deep_layers_out_channels, deep_layers_out_channels, kernel_size=kernel_size_3, stride=stride_3, padding=padding_3),
+                    activation_func(),
+                ]
+            )
+        modules.append(nn.Flatten())
         self.cnn = nn.Sequential(*modules)
 
         # Compute shape by doing one forward pass
