@@ -97,10 +97,6 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
 
 
 class TensorboardCallback(BaseCallback):
-    """
-    Custom callback for plotting additional values in tensorboard.
-    """
-
     def __init__(self, verbose=0):
         super().__init__(verbose)
         self.n_episodes = 0
@@ -114,6 +110,6 @@ class TensorboardCallback(BaseCallback):
         self.sum_scores += sum([info["score"] for info, done in zip(self.locals["infos"], self.locals["dones"]) if done])
 
         if n_step_dones > 0:
-            self.logger.record("score", self.sum_scores / self.n_episodes)
+            self.logger.record("train/score", self.sum_scores / self.n_episodes)
 
         return True
