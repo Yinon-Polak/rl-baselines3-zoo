@@ -94,3 +94,26 @@ class StopTrainingOnMaxEpisodes(BaseCallback):
                 f"{mean_ep_str}"
             )
         return continue_training
+
+
+class TensorboardCallback(BaseCallback):
+    """
+    Custom callback for plotting additional values in tensorboard.
+    """
+
+    def __init__(self, verbose=0):
+        super().__init__(verbose)
+        self.n_episodes = 0
+        self.sum_scores = 0
+
+    def _on_step(self) -> bool:
+        # Check that the `dones` local variable is defined
+        assert "dones" in self.locals, "`dones` variable is not defined, please check your code next to `callback.on_step()`"
+        n_step_dones = np.sum(self.locals["dones"]).item()
+        self.n_episodes += n_step_dones
+        self.sum_scores += sum([info["score"] for info, done in zip(self.locals["infos"], self.locals["dones"]) if done])
+
+        if n_step_dones > 0:
+            self.logger.record("score", self.sum_scores / self.n_episodes)
+
+        return True
