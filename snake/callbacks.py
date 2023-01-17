@@ -105,11 +105,15 @@ class TensorboardCallback(BaseCallback):
     def _on_step(self) -> bool:
         # Check that the `dones` local variable is defined
         assert "dones" in self.locals, "`dones` variable is not defined, please check your code next to `callback.on_step()`"
-        n_step_dones = np.sum(self.locals["dones"]).item()
-        self.n_episodes += n_step_dones
-        self.sum_scores += sum([info["score"] for info, done in zip(self.locals["infos"], self.locals["dones"]) if done])
+        assert "infos" in self.locals, "`infos` variable is not defined, please check your code next to `callback.on_step()`"
+        self.n_episodes += np.sum(self.locals["dones"]).item()
+        scores = [info["score"] for info, done in zip(self.locals["infos"], self.locals["dones"]) if done]
+        self.sum_scores += sum(scores)
 
-        if n_step_dones > 0:
-            self.logger.record("train/score", self.sum_scores / self.n_episodes)
+        if len(scores) > 0:
+            self.logger.record("train/mean_score", self.sum_scores / self.n_episodes)
+
+        for score in scores:
+            self.logger.record("train/score", score)
 
         return True
