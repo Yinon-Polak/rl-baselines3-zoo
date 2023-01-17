@@ -20,6 +20,12 @@ SnakeGameAIGym-v0:
         verbose: 1
     - snake.callbacks.TensorboardCallback:
         verbose: 1
+    - wandb.integration.sb3.WandbCallback:
+        verbose: 0
+        model_save_path: models/model.zip
+        model_save_freq: 10
+        gradient_save_freq: 10
+        log: all
 
 atari:
   env_wrapper:
