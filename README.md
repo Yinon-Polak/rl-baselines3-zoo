@@ -1,6 +1,6 @@
 # Snake RL
 - Solving Snake game using RL training framework [RL Baselines3 Zoo](https://github.com/DLR-RM/rl-baselines3-zoo) and snake environment from [snake-ai-pytorch](https://github.com/patrickloeber/snake-ai-pytorch).
-- Current best CNN with PPO algo can be viewed @ [wandb run page](https://wandb.ai/yinonpo/ppo_snake?workspace=user-yinonpo)
+- WIP, Current best CNN with PPO algo can be viewed @ [wandb run page](https://wandb.ai/yinonpo/ppo_snake?workspace=user-yinonpo)
 
 
 ## Installation
