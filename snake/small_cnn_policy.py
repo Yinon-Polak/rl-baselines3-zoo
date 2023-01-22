@@ -132,7 +132,7 @@ class ActorCriticSmallCnnPolicy(ActorCriticPolicy):
         observation_space: gym.spaces.Space,
         action_space: gym.spaces.Space,
         lr_schedule: Schedule,
-        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = [], # todo check this, in ActorCriticPolicy: if (ActorCriticPolicy.features_extractor_class == NatureCNN) then net_arch = [];
+        net_arch: Optional[List[Union[int, Dict[str, List[int]]]]] = [],
         activation_fn: Type[nn.Module] = nn.Tanh,
         ortho_init: bool = True,
         use_sde: bool = False,
