@@ -1,7 +1,9 @@
 import warnings
 from typing import Optional, List, Union, Dict, Type, Any
 
+import functorch
 import gym
+import torch
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.preprocessing import is_image_space
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
@@ -40,6 +42,10 @@ class NatureSmallCNN(BaseFeaturesExtractor):
             activation_func: nn.Module = nn.ReLU
     ):
         super().__init__(observation_space, features_dim)
+        self.head_value = 0.6274510025978088
+        self.food_value = 0.23529411852359772
+
+
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
         assert is_image_space(observation_space, check_channels=False), (
@@ -83,15 +89,46 @@ class NatureSmallCNN(BaseFeaturesExtractor):
         modules.append(nn.Flatten())
         self.cnn = nn.Sequential(*modules)
 
+
+
+
         # Compute shape by doing one forward pass
         with th.no_grad():
             n_flatten = self.cnn(th.as_tensor(observation_space.sample()[None]).float()).shape[1]
 
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), activation_func())
+        self.cnn_linear = nn.Sequential(nn.Linear(n_flatten, features_dim), activation_func())
+
+        self.floats_linear = nn.Sequential(nn.Linear(58 * 2, features_dim), activation_func())
+
+        self.final_linear = nn.Sequential(nn.Linear(features_dim * 2, features_dim), activation_func())
 
     def forward(self, observations: th.Tensor) -> th.Tensor:
-        return self.linear(self.cnn(observations))
+        # head and food locations
+        # head_features = functorch.vmap(self._get_head_features)(observations)
+        # food_features = functorch.vmap(self._get_food_features)(observations)
+        head_features = th.stack([self._get_head_features(obs) for obs in observations])
+        food_features = th.stack([self._get_food_features(obs) for obs in observations])
+        floats_output = self.floats_linear(torch.cat((head_features, food_features), dim=1))
+        cnn_output = self.cnn_linear(self.cnn(observations))
+        final_outputs = self.final_linear(torch.cat((cnn_output, floats_output), dim=1))
+        return final_outputs
 
+    def _get_head_features(self, mat: th.tensor):
+        return self._get_point_features(mat, self.head_value)
+
+    def _get_food_features(self, mat: th.tensor):
+        return self._get_point_features(mat, self.food_value)
+
+    def _get_point_features(self, mat: th.tensor, value: float):
+        point_loc = (mat == value).nonzero()[0]
+        y = point_loc[1] - 1
+        x = point_loc[2] - 1
+        features = th.zeros(58)
+        features[y] = 1.0
+        features[24 + x] = 1.0
+        features[56] = y / 24
+        features[57] = x / 32
+        return features
 
 class ActorCriticSmallCnnPolicy(ActorCriticPolicy):
     """
