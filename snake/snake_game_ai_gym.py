@@ -18,6 +18,12 @@ BLUE2 = (0, 100, 255)
 GREEN = (0,255,0)
 BLACK = (0, 0, 0)
 
+BW_BORDER = 255
+BW_BACKGROUND = 0
+BW_BODY = 130
+BW_SNAKE_HEAD = 160
+BW_FOOD = 60
+
 BLOCK_SIZE = 20
 
 KWARGS = {
@@ -56,7 +62,7 @@ class SnakeGameAIGym(gym.Env):
         self.w_pixels = int(self.w / BLOCK_SIZE)
         self.h_pixels = int(self.h / BLOCK_SIZE)
         self.n_blocks = self.w_pixels * self.h_pixels
-        self.screen_mat_shape = (self.h_pixels + 2, self.w_pixels + 2, 3)
+        self.screen_mat_shape = (self.h_pixels + 2, self.w_pixels + 2, 1)
         self.pygame_controller = PygameController(self.w, self.h,
                                                   BLOCK_SIZE) if self.use_pygame else DummyPygamController()
 
@@ -72,11 +78,11 @@ class SnakeGameAIGym(gym.Env):
         self.n_games = 0
         ####
 
-        self.pixel_color_border = np.array(BLACK)
-        self.pixel_color_background = np.array(WHITE)
-        self.pixel_color_body = np.array(BLUE1)
-        self.pixel_color_snake_head = np.array(GREEN)
-        self.pixel_color_food = np.array(RED)
+        self.pixel_color_border = np.array(BW_BORDER)
+        self.pixel_color_background = np.array(BW_BACKGROUND)
+        self.pixel_color_body = np.array(BW_BODY)
+        self.pixel_color_snake_head = np.array(BW_SNAKE_HEAD)
+        self.pixel_color_food = np.array(BW_FOOD)
 
 
         self.action_space = spaces.Discrete(3)
