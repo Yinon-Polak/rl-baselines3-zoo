@@ -98,7 +98,7 @@ class NatureSmallCNN(BaseFeaturesExtractor):
 
         self.cnn_linear = nn.Sequential(nn.Linear(n_flatten, features_dim), activation_func())
 
-        self.floats_linear = nn.Sequential(nn.Linear(58 * 2, features_dim), activation_func())
+        self.pixel_linear = nn.Sequential(nn.Linear(58 * 2, features_dim), activation_func())
 
         self.final_linear = nn.Sequential(nn.Linear(features_dim * 2, features_dim), activation_func())
 
@@ -108,9 +108,9 @@ class NatureSmallCNN(BaseFeaturesExtractor):
         # food_features = functorch.vmap(self._get_food_features)(observations)
         head_features = th.stack([self._get_head_features(obs) for obs in observations])
         food_features = th.stack([self._get_food_features(obs) for obs in observations])
-        floats_output = self.floats_linear(torch.cat((head_features, food_features), dim=1))
+        pixel_output = self.pixel_linear(torch.cat((head_features, food_features), dim=1))
         cnn_output = self.cnn_linear(self.cnn(observations))
-        final_outputs = self.final_linear(torch.cat((cnn_output, floats_output), dim=1))
+        final_outputs = self.final_linear(torch.cat((cnn_output, pixel_output), dim=1))
         return final_outputs
 
     def _get_head_features(self, mat: th.tensor):
