@@ -116,9 +116,9 @@ class NatureSmallCNN(BaseFeaturesExtractor):
         return self._get_point_features(mat, self.head_value)
 
     def _get_food_features(self, mat: th.tensor):
-        return self._get_point_features(mat, self.food_value)
+        return self._get_point_features(mat, self.food_value, allow_empty_vec=True)
 
-    def _get_point_features(self, mat: th.tensor, value: th.tensor):
+    def _get_point_features(self, mat: th.tensor, value: th.tensor, allow_empty_vec: bool = False):
         try:
             point_loc = torch.isclose(mat, value).nonzero()[0]
             y = point_loc[1] - 1
@@ -130,6 +130,9 @@ class NatureSmallCNN(BaseFeaturesExtractor):
             features[57] = x / 32
             return features.to(device=mat.device)
         except IndexError as e:
+            if allow_empty_vec:
+                return th.zeros(58).to(device=mat.device)
+
             print(e)
             print(sorted([(i, elem.item()) for i, elem in enumerate(mat.view(-1)) if elem.item() != 1.0], key=lambda x: x[1], reverse=True))
             raise e
