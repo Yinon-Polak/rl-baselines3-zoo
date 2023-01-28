@@ -1,7 +1,6 @@
 import warnings
 from typing import Optional, List, Union, Dict, Type, Any
 
-import functorch
 import gym
 import torch
 from stable_baselines3.common.policies import ActorCriticPolicy
