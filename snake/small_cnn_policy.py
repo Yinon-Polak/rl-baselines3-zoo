@@ -128,7 +128,7 @@ class NatureSmallCNN(BaseFeaturesExtractor):
             features[24 + x] = 1.0
             features[56] = y / 24
             features[57] = x / 32
-            return features
+            return features.to(device=mat.device)
         except IndexError as e:
             print(e)
             print(sorted([(i, elem.item()) for i, elem in enumerate(mat.view(-1)) if elem.item() != 1.0], key=lambda x: x[1], reverse=True))
