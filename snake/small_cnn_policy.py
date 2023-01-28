@@ -119,16 +119,20 @@ class NatureSmallCNN(BaseFeaturesExtractor):
         return self._get_point_features(mat, self.food_value)
 
     def _get_point_features(self, mat: th.tensor, value: float):
-        point_loc = (mat == value).nonzero()[0]
-        y = point_loc[1] - 1
-        x = point_loc[2] - 1
-        features = th.zeros(58)
-        features[y] = 1.0
-        features[24 + x] = 1.0
-        features[56] = y / 24
-        features[57] = x / 32
-        return features
-
+        try:
+            point_loc = (mat == value).nonzero()[0]
+            y = point_loc[1] - 1
+            x = point_loc[2] - 1
+            features = th.zeros(58)
+            features[y] = 1.0
+            features[24 + x] = 1.0
+            features[56] = y / 24
+            features[57] = x / 32
+            return features
+        except IndexError as e:
+            print(e)
+            print(sorted([(i, elem.item()) for i, elem in enumerate(mat.view(-1)) if elem.item() != 1.0], key=lambda x: x[1], reverse=True))
+            raise e
 class ActorCriticSmallCnnPolicy(ActorCriticPolicy):
     """
     CNN policy class for actor-critic algorithms (has both policy and value prediction).
