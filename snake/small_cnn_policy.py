@@ -41,8 +41,8 @@ class NatureSmallCNN(BaseFeaturesExtractor):
             activation_func: nn.Module = nn.ReLU
     ):
         super().__init__(observation_space, features_dim)
-        self.head_value = 0.6274510025978088
-        self.food_value = 0.23529411852359772
+        self.head_value = th.tensor(0.6274510025978088)
+        self.food_value = th.tensor(0.23529411852359772)
 
 
         # We assume CxHxW images (channels first)
@@ -118,9 +118,9 @@ class NatureSmallCNN(BaseFeaturesExtractor):
     def _get_food_features(self, mat: th.tensor):
         return self._get_point_features(mat, self.food_value)
 
-    def _get_point_features(self, mat: th.tensor, value: float):
+    def _get_point_features(self, mat: th.tensor, value: th.tensor):
         try:
-            point_loc = (mat == value).nonzero()[0]
+            point_loc = torch.isclose(mat, value).nonzero()[0]
             y = point_loc[1] - 1
             x = point_loc[2] - 1
             features = th.zeros(58)
