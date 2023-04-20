@@ -1,9 +1,8 @@
 import copy
 import random
-import gym
 import numpy as np
-from gym import spaces
-from gym.spaces import Box
+import gymnasium as gym
+
 
 from snake.pygame_controller import PygameController, DummyPygamController
 from snake.wrappers import Direction, Point, CLOCK_WISE, CollisionType
@@ -85,8 +84,8 @@ class SnakeGameAIGym(gym.Env):
         self.pixel_color_food = np.array(BW_FOOD)
 
 
-        self.action_space = spaces.Discrete(3,)
-        self.observation_space = Box(low=0, high=255, shape=self.screen_mat_shape, dtype=np.uint8)
+        self.action_space = gym.spaces.Discrete(3,)
+        self.observation_space = gym.spaces.Box(low=0, high=255, shape=self.screen_mat_shape, dtype=np.uint8)
 
         self.reset()
 
