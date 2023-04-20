@@ -209,7 +209,7 @@ def train() -> None:
             tags=tags,
             config=vars(args),
             sync_tensorboard=True,  # auto-upload sb3's tensorboard metrics
-            monitor_gym=True,  # auto-upload the videos of agents playing the game
+            # monitor_gym=True,  # auto-upload the videos of agents playing the game
             save_code=True,  # optional
         )
         args.tensorboard_log = f"runs/{run_name}"
