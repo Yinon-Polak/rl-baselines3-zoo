@@ -85,7 +85,7 @@ class SnakeGameAIGym(gym.Env):
         self.pixel_color_food = np.array(BW_FOOD)
 
 
-        self.action_space = spaces.Discrete(3)
+        self.action_space = spaces.Discrete(3,)
         self.observation_space = Box(low=0, high=255, shape=self.screen_mat_shape, dtype=np.uint8)
 
         self.reset()
