@@ -1,5 +1,7 @@
-import gym
-from gym.envs.registration import register
+from typing import Optional
+
+import gymnasium as gym
+from gymnasium.envs.registration import register
 
 from rl_zoo3.wrappers import MaskVelocityWrapper
 
@@ -12,6 +14,11 @@ try:
     import highway_env  # pytype: disable=import-error
 except ImportError:
     highway_env = None
+else:
+    # hotfix for highway_env
+    import numpy as np
+
+    np.float = np.float32  # type: ignore[attr-defined]
 
 try:
     import neck_rl  # pytype: disable=import-error
@@ -43,11 +50,16 @@ try:
 except ImportError:
     rocket_lander_gym = None
 
+try:
+    import minigrid  # pytype: disable=import-error
+except ImportError:
+    minigrid = None
+
 
 # Register no vel envs
 def create_no_vel_env(env_id: str):
-    def make_env():
-        env = gym.make(env_id)
+    def make_env(render_mode: Optional[str] = None):
+        env = gym.make(env_id, render_mode=render_mode)
         env = MaskVelocityWrapper(env)
         return env
 

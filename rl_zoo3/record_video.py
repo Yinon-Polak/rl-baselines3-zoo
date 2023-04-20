@@ -11,7 +11,7 @@ from stable_baselines3.common.vec_env import VecVideoRecorder
 from rl_zoo3.exp_manager import ExperimentManager
 from rl_zoo3.utils import ALGOS, StoreDict, create_test_env, get_model_path, get_saved_hyperparams
 
-if __name__ == "__main__":  # noqa: C901
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", help="environment ID", type=EnvironmentName, default="CartPole-v1")
     parser.add_argument("-f", "--folder", help="Log folder", type=str, default="rl-trained-agents")
@@ -73,9 +73,10 @@ if __name__ == "__main__":  # noqa: C901
     set_random_seed(args.seed)
 
     is_atari = ExperimentManager.is_atari(env_name.gym_id)
+    is_minigrid = ExperimentManager.is_minigrid(env_name.gym_id)
 
     stats_path = os.path.join(log_path, env_name)
-    hyperparams, stats_path = get_saved_hyperparams(stats_path)
+    hyperparams, maybe_stats_path = get_saved_hyperparams(stats_path)
 
     # load env_kwargs if existing
     env_kwargs = {}
@@ -89,10 +90,13 @@ if __name__ == "__main__":  # noqa: C901
     if args.env_kwargs is not None:
         env_kwargs.update(args.env_kwargs)
 
+    # Force rgb_array rendering (gym 0.26+)
+    env_kwargs.update(render_mode="rgb_array")
+
     env = create_test_env(
         env_name.gym_id,
         n_envs=n_envs,
-        stats_path=stats_path,
+        stats_path=maybe_stats_path,
         seed=seed,
         log_dir=None,
         should_render=not args.no_render,
@@ -127,7 +131,7 @@ if __name__ == "__main__":  # noqa: C901
     model = ALGOS[algo].load(model_path, env=env, custom_objects=custom_objects, **kwargs)
 
     # Deterministic by default except for atari games
-    stochastic = args.stochastic or is_atari and not args.deterministic
+    stochastic = args.stochastic or (is_atari or is_minigrid) and not args.deterministic
     deterministic = not stochastic
 
     if video_folder is None:
@@ -148,15 +152,15 @@ if __name__ == "__main__":  # noqa: C901
     try:
         for _ in range(video_length + 1):
             action, lstm_states = model.predict(
-                obs,
+                obs,  # type: ignore[arg-type]
                 state=lstm_states,
                 episode_start=episode_starts,
                 deterministic=deterministic,
             )
-            obs, _, dones, _ = env.step(action)
-            episode_starts = dones
             if not args.no_render:
                 env.render()
+            obs, _, dones, _ = env.step(action)  # type: ignore[assignment]
+            episode_starts = dones
     except KeyboardInterrupt:
         pass
 

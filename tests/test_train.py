@@ -35,7 +35,7 @@ def test_train(tmp_path, experiment):
     algo, env_id = experiments[experiment]
     args = ["-n", str(N_STEPS), "--algo", algo, "--env", env_id, "--log-folder", tmp_path]
 
-    return_code = subprocess.call(["python", "train.py"] + args)
+    return_code = subprocess.call(["python", "train.py", *args])
     _assert_eq(return_code, 0)
 
 
@@ -54,7 +54,7 @@ def test_continue_training(tmp_path):
         "rl-trained-agents/a2c/CartPole-v1_1/CartPole-v1.zip",
     ]
 
-    return_code = subprocess.call(["python", "train.py"] + args)
+    return_code = subprocess.call(["python", "train.py", *args])
     _assert_eq(return_code, 0)
 
 
@@ -74,14 +74,14 @@ def test_save_load_replay_buffer(tmp_path):
         "buffer_size:1000",
     ]
 
-    return_code = subprocess.call(["python", "train.py"] + args)
+    return_code = subprocess.call(["python", "train.py", *args])
     _assert_eq(return_code, 0)
 
     assert os.path.isfile(os.path.join(tmp_path, "sac/Pendulum-v1_1/replay_buffer.pkl"))
 
-    args = args + ["-i", os.path.join(tmp_path, "sac/Pendulum-v1_1/Pendulum-v1.zip")]
+    args = [*args, "-i", os.path.join(tmp_path, "sac/Pendulum-v1_1/Pendulum-v1.zip")]
 
-    return_code = subprocess.call(["python", "train.py"] + args)
+    return_code = subprocess.call(["python", "train.py", *args])
     _assert_eq(return_code, 0)
 
 
@@ -101,7 +101,7 @@ def test_parallel_train(tmp_path):
         "callback:'rl_zoo3.callbacks.ParallelTrainCallback'",
     ]
 
-    return_code = subprocess.call(["python", "train.py"] + args)
+    return_code = subprocess.call(["python", "train.py", *args])
     _assert_eq(return_code, 0)
 
 
@@ -127,7 +127,7 @@ def test_custom_yaml(tmp_path):
         "policy:'stable_baselines3.ppo.MlpPolicy'",
     ]
 
-    return_code = subprocess.call(["python", "train.py"] + args)
+    return_code = subprocess.call(["python", "train.py", *args])
     _assert_eq(return_code, 0)
 
 
@@ -147,5 +147,31 @@ def test_python_config_file(tmp_path, config_file):
         config_file,
     ]
 
-    return_code = subprocess.call(["python", "train.py"] + args)
+    return_code = subprocess.call(["python", "train.py", *args])
+    _assert_eq(return_code, 0)
+
+
+def test_gym_packages(tmp_path):
+    # Update python path so the test_env package is found
+    env_variables = os.environ.copy()
+    python_path = env_variables.get("PYTHONPATH", "") + ":tests/dummy_env"
+    env_variables["PYTHONPATH"] = python_path
+
+    # Test gym packages
+    args = [
+        "-n",
+        str(N_STEPS),
+        "--algo",
+        "ppo",
+        "--env",
+        "TestEnv-v0",
+        "--gym-packages",
+        "test_env",
+        "--log-folder",
+        tmp_path,
+        "--conf-file",
+        "test_env.config",
+    ]
+
+    return_code = subprocess.call(["python", "train.py", *args], env=env_variables)
     _assert_eq(return_code, 0)

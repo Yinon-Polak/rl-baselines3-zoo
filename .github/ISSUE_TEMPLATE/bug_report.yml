@@ -45,13 +45,13 @@ body:
          * GPU models and configuration
          * Python version
          * PyTorch version
-         * Gym version
+         * Gymnasium version
+         * (if installed) OpenAI Gym version
          * Versions of any other relevant libraries
 
         You can use `sb3.get_system_info()` to print relevant packages info:
-        ```python
-        import stable_baselines3 as sb3
-        sb3.get_system_info()
+        ```sh
+        python -c 'import stable_baselines3 as sb3; sb3.get_system_info()'
         ```
   - type: checkboxes
     id: terms
@@ -62,7 +62,7 @@ body:
           required: true
         - label: I have read the [SB3 documentation](https://stable-baselines3.readthedocs.io/en/master/)
           required: true
-        - label: I have read the [RL Zoo README](https://github.com/DLR-RM/rl-baselines3-zoo/blob/master/README.md)
+        - label: I have read the [RL Zoo documentation](https://rl-baselines3-zoo.readthedocs.io)
           required: true
         - label: I have provided a minimal working example to reproduce the bug
           required: true

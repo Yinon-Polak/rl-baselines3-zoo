@@ -2,25 +2,29 @@ import argparse
 import glob
 import importlib
 import os
+from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
-import gym
+import gym as gym26
+import gymnasium as gym
 import stable_baselines3 as sb3  # noqa: F401
 import torch as th  # noqa: F401
 import yaml
+from gymnasium import spaces
 from huggingface_hub import HfApi
 from huggingface_sb3 import EnvironmentName, ModelName
 from sb3_contrib import ARS, QRDQN, TQC, TRPO, RecurrentPPO
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
+from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.sb2_compat.rmsprop_tf_like import RMSpropTFLike  # noqa: F401
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv, VecFrameStack, VecNormalize
 
 # For custom activation fn
-from torch import nn as nn  # noqa: F401 pylint: disable=unused-import
+from torch import nn as nn
 
-ALGOS = {
+ALGOS: Dict[str, Type[BaseAlgorithm]] = {
     "a2c": A2C,
     "ddpg": DDPG,
     "dqn": DQN,
@@ -37,12 +41,8 @@ ALGOS = {
 
 
 def flatten_dict_observations(env: gym.Env) -> gym.Env:
-    assert isinstance(env.observation_space, gym.spaces.Dict)
-    try:
-        return gym.wrappers.FlattenObservation(env)
-    except AttributeError:
-        keys = env.observation_space.spaces.keys()
-        return gym.wrappers.FlattenDictWrapper(env, dict_keys=list(keys))
+    assert isinstance(env.observation_space, spaces.Dict)
+    return gym.wrappers.FlattenObservation(env)
 
 
 def get_wrapper_class(hyperparams: Dict[str, Any], key: str = "env_wrapper") -> Optional[Callable[[gym.Env], gym.Env]]:
@@ -155,7 +155,7 @@ def get_callback_list(hyperparams: Dict[str, Any]) -> List[BaseCallback]:
     :return:
     """
 
-    callbacks = []
+    callbacks: List[BaseCallback] = []
 
     if "callback" in hyperparams.keys():
         callback_name = hyperparams.get("callback")
@@ -216,6 +216,7 @@ def create_test_env(
     from rl_zoo3.exp_manager import ExperimentManager
 
     # Create the environment and wrap it if necessary
+    assert hyperparams is not None
     env_wrapper = get_wrapper_class(hyperparams)
 
     hyperparams = {} if hyperparams is None else hyperparams
@@ -223,23 +224,40 @@ def create_test_env(
     if "env_wrapper" in hyperparams.keys():
         del hyperparams["env_wrapper"]
 
-    vec_env_kwargs = {}
+    vec_env_kwargs: Dict[str, Any] = {}
     vec_env_cls = DummyVecEnv
     if n_envs > 1 or (ExperimentManager.is_bullet(env_id) and should_render):
         # HACK: force SubprocVecEnv for Bullet env
         # as Pybullet envs does not follow gym.render() interface
-        vec_env_cls = SubprocVecEnv
+        vec_env_cls = SubprocVecEnv  # type: ignore[assignment]
         # start_method = 'spawn' for thread safe
 
-    # panda-gym is based on pybullet, whose rendering requires to be configure at initialization
-    if ExperimentManager.is_panda_gym(env_id) and should_render:
-        if env_kwargs is None:
-            env_kwargs = {"render": True}
-        else:
-            env_kwargs["render"] = True
+    # Fix for gym 0.26, to keep old behavior
+    env_kwargs = env_kwargs or {}
+    env_kwargs = deepcopy(env_kwargs)
+    if "render_mode" not in env_kwargs and should_render:
+        env_kwargs.update(render_mode="human")
+
+    # Make Pybullet compatible with gym 0.26
+    if ExperimentManager.is_bullet(env_id):
+        spec = gym26.spec(env_id)
+        env_kwargs.update(dict(apply_api_compatibility=True))
+    else:
+        # Define make_env here so it works with subprocesses
+        # when the registry was modified with `--gym-packages`
+        # See https://github.com/HumanCompatibleAI/imitation/pull/160
+        try:
+            spec = gym.spec(env_id)  # type: ignore[assignment]
+        except gym.error.NameNotFound:
+            # Registered with gym 0.26
+            spec = gym26.spec(env_id)
+
+    def make_env(**kwargs) -> gym.Env:
+        env = spec.make(**kwargs)
+        return env  # type: ignore[return-value]
 
     env = make_vec_env(
-        env_id,
+        make_env,
         n_envs=n_envs,
         monitor_dir=log_dir,
         seed=seed,
@@ -250,9 +268,9 @@ def create_test_env(
     )
 
     if "vec_env_wrapper" in hyperparams.keys():
-
         vec_env_wrapper = get_wrapper_class(hyperparams, "vec_env_wrapper")
-        env = vec_env_wrapper(env)
+        assert vec_env_wrapper is not None
+        env = vec_env_wrapper(env)  # type: ignore[assignment, arg-type]
         del hyperparams["vec_env_wrapper"]
 
     # Load saved stats for normalizing input and rewards
@@ -284,8 +302,8 @@ def linear_schedule(initial_value: Union[float, str]) -> Callable[[float], float
     :param initial_value: (float or str)
     :return: (function)
     """
-    if isinstance(initial_value, str):
-        initial_value = float(initial_value)
+    # Force conversion to float
+    initial_value_ = float(initial_value)
 
     def func(progress_remaining: float) -> float:
         """
@@ -293,7 +311,7 @@ def linear_schedule(initial_value: Union[float, str]) -> Callable[[float], float
         :param progress_remaining: (float)
         :return: (float)
         """
-        return progress_remaining * initial_value
+        return progress_remaining * initial_value_
 
     return func
 
@@ -311,7 +329,7 @@ def get_trained_models(log_folder: str) -> Dict[str, Tuple[str, str]]:
             args_files = glob.glob(os.path.join(log_folder, algo, model_folder, "*/args.yml"))
             if len(args_files) != 1:
                 continue  # we expect only one sub-folder with an args.yml file
-            with open(args_files[0], "r") as fh:
+            with open(args_files[0]) as fh:
                 env_id = yaml.load(fh, Loader=yaml.UnsafeLoader)["env"]
 
             model_name = ModelName(algo, EnvironmentName(env_id))
@@ -383,6 +401,9 @@ def get_saved_hyperparams(
     test_mode: bool = False,
 ) -> Tuple[Dict[str, Any], Optional[str]]:
     """
+    Retrieve saved hyperparameters given a path.
+    Return empty dict and None if the path is not valid.
+
     :param stats_path:
     :param norm_reward:
     :param test_mode:
@@ -390,7 +411,7 @@ def get_saved_hyperparams(
     """
     hyperparams: Dict[str, Any] = {}
     if not os.path.isdir(stats_path):
-        stats_path = None
+        return hyperparams, None
     else:
         config_file = os.path.join(stats_path, "config.yml")
         if os.path.isfile(config_file):
@@ -445,7 +466,6 @@ def get_model_path(
     load_checkpoint: Optional[str] = None,
     load_last_checkpoint: bool = False,
 ) -> Tuple[str, str, str]:
-
     if exp_id == 0:
         exp_id = get_latest_run_id(os.path.join(folder, algo), env_name)
         print(f"Loading latest experiment, id={exp_id}")

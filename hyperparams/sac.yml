@@ -161,7 +161,7 @@ MinitaurBulletDuckEnv-v0:
   learning_starts: 10000
 
 # To be tuned
-CarRacing-v0:
+CarRacing-v1:
   env_wrapper:
     - rl_zoo3.wrappers.FrameSkip:
         skip: 2
@@ -225,7 +225,6 @@ FetchReach-v1:
   normalize: True
   replay_buffer_class: HerReplayBuffer
   replay_buffer_kwargs: "dict(
-    online_sampling=True,
     goal_selection_strategy='future',
     n_sampled_goal=4
   )"
