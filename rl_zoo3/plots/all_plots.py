@@ -49,7 +49,7 @@ def all_plots():  # noqa: C901
     if args.labels is None:
         args.labels = args.exp_folders
 
-    for env in args.env:  # noqa: C901
+    for env in args.env:
         plt.figure(f"Results {env}")
         plt.title(f"{env}", fontsize=14)
 
@@ -61,7 +61,6 @@ def all_plots():  # noqa: C901
 
         for algo in args.algos:
             for folder_idx, exp_folder in enumerate(args.exp_folders):
-
                 log_path = os.path.join(exp_folder, algo.lower())
 
                 if not os.path.isdir(log_path):

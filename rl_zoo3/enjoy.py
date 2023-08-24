@@ -17,7 +17,7 @@ from rl_zoo3.load_from_hub import download_from_hub
 from rl_zoo3.utils import StoreDict, get_model_path
 
 
-def enjoy():  # noqa: C901
+def enjoy() -> None:  # noqa: C901
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", help="environment ID", type=EnvironmentName, default="CartPole-v1")
     parser.add_argument("-f", "--folder", help="Log folder", type=str, default="rl-trained-agents")
@@ -58,7 +58,7 @@ def enjoy():  # noqa: C901
         type=str,
         nargs="+",
         default=[],
-        help="Additional external Gym environment package modules to import (e.g. gym_minigrid)",
+        help="Additional external Gym environment package modules to import",
     )
     parser.add_argument(
         "--env-kwargs", type=str, nargs="+", action=StoreDict, help="Optional keyword argument to pass to the env constructor"
@@ -137,9 +137,10 @@ def enjoy():  # noqa: C901
         th.set_num_threads(args.num_threads)
 
     is_atari = ExperimentManager.is_atari(env_name.gym_id)
+    is_minigrid = ExperimentManager.is_minigrid(env_name.gym_id)
 
     stats_path = os.path.join(log_path, env_name)
-    hyperparams, stats_path = get_saved_hyperparams(stats_path, norm_reward=args.norm_reward, test_mode=True)
+    hyperparams, maybe_stats_path = get_saved_hyperparams(stats_path, norm_reward=args.norm_reward, test_mode=True)
 
     # load env_kwargs if existing
     env_kwargs = {}
@@ -158,7 +159,7 @@ def enjoy():  # noqa: C901
     env = create_test_env(
         env_name.gym_id,
         n_envs=args.n_envs,
-        stats_path=stats_path,
+        stats_path=maybe_stats_path,
         seed=args.seed,
         log_dir=log_dir,
         should_render=not args.no_render,
@@ -188,12 +189,14 @@ def enjoy():  # noqa: C901
             "clip_range": lambda _: 0.0,
         }
 
-    model = ALGOS[algo].load(model_path, env=env, custom_objects=custom_objects, device=args.device, **kwargs)
+    if "HerReplayBuffer" in hyperparams.get("replay_buffer_class", ""):
+        kwargs["env"] = env
 
+    model = ALGOS[algo].load(model_path, custom_objects=custom_objects, device=args.device, **kwargs)
     obs = env.reset()
 
     # Deterministic by default except for atari games
-    stochastic = args.stochastic or is_atari and not args.deterministic
+    stochastic = args.stochastic or (is_atari or is_minigrid) and not args.deterministic
     deterministic = not stochastic
 
     episode_reward = 0.0
@@ -213,7 +216,7 @@ def enjoy():  # noqa: C901
     try:
         for _ in generator:
             action, lstm_states = model.predict(
-                obs,
+                obs,  # type: ignore[arg-type]
                 state=lstm_states,
                 episode_start=episode_start,
                 deterministic=deterministic,

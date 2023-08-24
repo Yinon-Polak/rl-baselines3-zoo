@@ -1,14 +1,97 @@
-## Release 1.7.0a10 (WIP)
+## Release 2.1.0 (2023-08-17)
+
+### Breaking Changes
+- Dropped python 3.7 support
+- SB3 now requires PyTorch 1.13+
+- Upgraded to SB3 >= 2.1.0
+- Upgraded to Huggingface-SB3 >= 2.3
+- Upgraded to Optuna >= 3.0
+- Upgraded to cloudpickle >= 2.2.1
+
+### New Features
+- Added python 3.11 support
+
+### Bug fixes
+
+### Documentation
+
+### Other
+
+
+
+## Release 2.0.0 (2023-06-22)
+
+**Gymnasium support**
+
+> **Warning**
+> Stable-Baselines3 (SB3) v2.0.0 will be the last one supporting python 3.7
+
+### Breaking Changes
+- Fixed bug in HistoryWrapper, now returns the correct obs space limits
+- Upgraded to SB3 >= 2.0.0
+- Upgraded to Huggingface-SB3 >= 2.2.5
+- Upgraded to Gym API 0.26+, RL Zoo3 doesn't work anymore with Gym 0.21
+
+### New Features
+- Added Gymnasium support
+- Gym 0.26+ patches to continue working with pybullet and TimeLimit wrapper
+
+### Bug fixes
+- Renamed `CarRacing-v1` to `CarRacing-v2` in hyperparameters
+- Huggingface push to hub now accepts a `--n-timesteps` argument to adjust the length of the video
+- Fixed `record_video` steps (before it was stepping in a closed env)
+
+## Release 1.8.0 (2023-04-07)
+
+**New Documentation, Multi-Env HerReplayBuffer**
+
+> **Warning**
+> Stable-Baselines3 (SB3) v1.8.0 will be the last one to use Gym as a backend.
+  Starting with v2.0.0, Gymnasium will be the default backend (though SB3 will have compatibility layers for Gym envs).
+  You can find a migration guide [here](https://gymnasium.farama.org/content/migration-guide/).
+  If you want to try the SB3 v2.0 alpha version, you can take a look at [PR #1327](https://github.com/DLR-RM/stable-baselines3/pull/1327).
+
+### Breaking Changes
+- Upgraded to SB3 >= 1.8.0
+- Upgraded to new `HerReplayBuffer` implementation that supports multiple envs
+- Removed `TimeFeatureWrapper` for Panda and Fetch envs, as the new replay buffer should handle timeout.
+
+### New Features
+- Tuned hyperparameters for RecurrentPPO on Swimmer
+- Documentation is now built using Sphinx and hosted on read the doc
+- Added hyperparameters pre-trained agents for PPO on 11 MiniGrid envs
+
+### Bug fixes
+- Set ``highway-env`` version to 1.5 and ``setuptools to`` v65.5 for the CI
+- Removed `use_auth_token` for push to hub util
+- Reverted from v3 to v2 for HumanoidStandup, Reacher, InvertedPendulum and InvertedDoublePendulum since they were not part of the mujoco refactoring (see https://github.com/openai/gym/pull/1304)
+- Fixed `gym-minigrid` policy (from `MlpPolicy` to `MultiInputPolicy`)
+
+### Documentation
+
+### Other
+- Added support for `ruff` (fast alternative to flake8) in the Makefile
+- Removed Gitlab CI file
+- Replaced deprecated `optuna.suggest_loguniform(...)` by `optuna.suggest_float(..., log=True)`
+- Switched to `ruff` and `pyproject.toml`
+- Removed `online_sampling` and `max_episode_length` argument when using `HerReplayBuffer`
+
+## Release 1.7.0 (2023-01-10)
+
+**SB3 v1.7.0, added support for python config files**
 
 ### Breaking Changes
 - `--yaml-file` argument was renamed to `-conf` (`--conf-file`) as now python file are supported too
-- Upgraded to SB3 >= 1.7.0a10
+- Upgraded to SB3 >= 1.7.0 (changed `net_arch=[dict(pi=.., vf=..)]` to `net_arch=dict(pi=.., vf=..)`)
 
 ### New Features
 - Specifying custom policies in yaml file is now supported (@Rick-v-E)
 - Added ``monitor_kwargs`` parameter
 - Handle the `env_kwargs` of `render:True` under the hood for panda-gym v1 envs in `enjoy` replay to match visualzation behavior of other envs
 - Added support for python config file
+- Tuned hyperparameters for PPO on Swimmer
+- Added ``-tags/--wandb-tags`` argument to ``train.py`` to add tags to the wandb run
+- Added a sb3 version tag to the wandb run
 
 ### Bug fixes
 - Allow `python -m rl_zoo3.cli` to be called directly
@@ -19,6 +102,8 @@
 
 ### Other
 - `scripts/plot_train.py` plots models such that newer models appear on top of older ones.
+- Added additional type checking using mypy
+- Standardized the use of ``from gym import spaces``
 
 
 ## Release 1.6.3 (2022-10-13)

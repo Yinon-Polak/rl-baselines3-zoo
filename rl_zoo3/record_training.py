@@ -9,7 +9,7 @@ from huggingface_sb3 import EnvironmentName
 
 from rl_zoo3.utils import ALGOS, get_latest_run_id
 
-if __name__ == "__main__":  # noqa: C901
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", help="environment ID", type=EnvironmentName, default="CartPole-v1")
     parser.add_argument("-f", "--folder", help="Log folder", type=str, default="rl-trained-agents")
@@ -51,8 +51,8 @@ if __name__ == "__main__":  # noqa: C901
 
     # record a video of every model
     models_dir_entries = [dir_ent.name for dir_ent in os.scandir(log_path) if dir_ent.is_file()]
-    checkpoints = list(filter(lambda x: x.startswith("rl_model_"), models_dir_entries))
-    checkpoints = list(map(lambda x: int(re.findall(r"\d+", x)[0]), checkpoints))
+    checkpoints_names = list(filter(lambda x: x.startswith("rl_model_"), models_dir_entries))
+    checkpoints = list(map(lambda x: int(re.findall(r"\d+", x)[0]), checkpoints_names))
     checkpoints.sort()
 
     args_final_model = [
@@ -79,19 +79,19 @@ if __name__ == "__main__":  # noqa: C901
         args_final_model.append("--deterministic")
 
     if os.path.exists(os.path.join(log_path, f"{env_name}.zip")):
-        return_code = subprocess.call(["python", "-m", "rl_zoo3.record_video"] + args_final_model)
+        return_code = subprocess.call(["python", "-m", "rl_zoo3.record_video", *args_final_model])
         assert return_code == 0, "Failed to record the final model"
 
     if os.path.exists(os.path.join(log_path, "best_model.zip")):
-        args_best_model = args_final_model + ["--load-best"]
-        return_code = subprocess.call(["python", "-m", "rl_zoo3.record_video"] + args_best_model)
+        args_best_model = [*args_final_model, "--load-best"]
+        return_code = subprocess.call(["python", "-m", "rl_zoo3.record_video", *args_best_model])
         assert return_code == 0, "Failed to record the best model"
 
-    args_checkpoint = args_final_model + ["--load-checkpoint"]
+    args_checkpoint = [*args_final_model, "--load-checkpoint"]
     args_checkpoint.append("0")
     for checkpoint in checkpoints:
         args_checkpoint[-1] = str(checkpoint)
-        return_code = subprocess.call(["python", "-m", "rl_zoo3.record_video"] + args_checkpoint)
+        return_code = subprocess.call(["python", "-m", "rl_zoo3.record_video", *args_checkpoint])
         assert return_code == 0, f"Failed to record the {checkpoint} checkpoint model"
 
     # add text to each video
@@ -102,7 +102,7 @@ if __name__ == "__main__":  # noqa: C901
     # sort checkpoints by the number of steps
     def get_number_from_checkpoint_filename(filename: str) -> int:
         match = re.search("checkpoint-(.*?)-", filename)
-        number = 0
+        number = "0"
         if match is not None:
             number = match.group(1)
 

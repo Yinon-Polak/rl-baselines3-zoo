@@ -98,7 +98,7 @@ def plot_from_file():  # noqa: C901
                     for new_key in results_2[key].keys():
                         results[key][new_key] = results_2[key][new_key]
 
-    keys = [key for key in results[list(results.keys())[0]].keys() if key not in args.skip_keys]
+    keys = [key for key in results[next(iter(results.keys()))].keys() if key not in args.skip_keys]
     print(f"keys: {keys}")
     if len(args.keep_keys) > 0:
         keys = [key for key in keys if key in args.keep_keys]
@@ -115,7 +115,6 @@ def plot_from_file():  # noqa: C901
     if not args.skip_timesteps:
         # Plot learning curves per env
         for env in envs:
-
             plt.figure(f"Results {env}")
             title = f"{env}"  # BulletEnv-v0
             if "Mountain" in env:
@@ -207,7 +206,6 @@ def plot_from_file():  # noqa: C901
 
     # Rliable plots, see https://github.com/google-research/rliable
     if args.rliable:
-
         if rly is None:
             raise ImportError(
                 "You must install rliable package to use this feature. Note: Python 3.7+ is required in that case."

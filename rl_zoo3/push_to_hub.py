@@ -20,9 +20,9 @@ from stable_baselines3.common.vec_env import VecEnv, unwrap_vec_normalize
 from wasabi import Printer
 
 import rl_zoo3.import_envs  # noqa: F401 pylint: disable=unused-import
-from rl_zoo3 import ALGOS, create_test_env, get_saved_hyperparams
+from rl_zoo3 import ALGOS, get_saved_hyperparams
 from rl_zoo3.exp_manager import ExperimentManager
-from rl_zoo3.utils import StoreDict, get_model_path
+from rl_zoo3.utils import StoreDict, create_test_env, get_model_path
 
 msg = Printer()
 
@@ -84,21 +84,26 @@ RL Zoo: https://github.com/DLR-RM/rl-baselines3-zoo<br/>
 SB3: https://github.com/DLR-RM/stable-baselines3<br/>
 SB3 Contrib: https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
 
+Install the RL Zoo (with SB3 and SB3-Contrib):
+```bash
+pip install rl_zoo3
+```
+
 ```
 # Download model and save it into the logs/ folder
 python -m rl_zoo3.load_from_hub --algo {algo_name} --env {env_id} -orga {organization} -f logs/
-python enjoy.py --algo {algo_name} --env {env_id}  -f logs/
+python -m rl_zoo3.enjoy --algo {algo_name} --env {env_id}  -f logs/
 ```
 
 If you installed the RL Zoo3 via pip (`pip install rl_zoo3`), from anywhere you can do:
 ```
 python -m rl_zoo3.load_from_hub --algo {algo_name} --env {env_id} -orga {organization} -f logs/
-rl_zoo3 enjoy --algo {algo_name} --env {env_id}  -f logs/
+python -m rl_zoo3.enjoy --algo {algo_name} --env {env_id}  -f logs/
 ```
 
 ## Training (with the RL Zoo)
 ```
-python train.py --algo {algo_name} --env {env_id} -f logs/
+python -m rl_zoo3.train --algo {algo_name} --env {env_id} -f logs/
 # Upload the model and generate video (when possible)
 python -m rl_zoo3.push_to_hub --algo {algo_name} --env {env_id} -f logs/ -orga {organization}
 ```
@@ -193,7 +198,7 @@ def package_to_hub(
 
     # Git pull
     repo_local_path = Path(local_repo_path) / repo_name
-    repo = Repository(repo_local_path, clone_from=repo_url, use_auth_token=True)
+    repo = Repository(repo_local_path, clone_from=repo_url)
     repo.git_pull(rebase=True)
 
     repo.lfs_track(["*.mp4"])
@@ -272,12 +277,12 @@ def package_to_hub(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env", help="environment ID", type=EnvironmentName, required=True)
+    parser.add_argument("--env", help="Environment ID", type=EnvironmentName, required=True)
     parser.add_argument("-f", "--folder", help="Log folder", type=str, required=True)
     parser.add_argument("--algo", help="RL Algorithm", type=str, required=True, choices=list(ALGOS.keys()))
-    parser.add_argument("-n", "--n-timesteps", help="number of timesteps", default=1000, type=int)
+    parser.add_argument("-n", "--n-timesteps", help="Number of timesteps for the video recording", default=1000, type=int)
     parser.add_argument("--num-threads", help="Number of threads for PyTorch (-1 to use default)", default=-1, type=int)
-    parser.add_argument("--n-envs", help="number of environments", default=1, type=int)
+    parser.add_argument("--n-envs", help="Number of environments", default=1, type=int)
     parser.add_argument("--exp-id", help="Experiment ID (default: 0: latest, -1: no exp folder)", default=0, type=int)
     parser.add_argument("--verbose", help="Verbose mode (0: no output, 1: INFO)", default=1, type=int)
     parser.add_argument(
@@ -339,9 +344,10 @@ if __name__ == "__main__":
         th.set_num_threads(args.num_threads)
 
     is_atari = ExperimentManager.is_atari(env_name.gym_id)
+    is_minigrid = ExperimentManager.is_minigrid(env_name.gym_id)
 
     stats_path = os.path.join(log_path, env_name)
-    hyperparams, stats_path = get_saved_hyperparams(stats_path, test_mode=True)
+    hyperparams, maybe_stats_path = get_saved_hyperparams(stats_path, test_mode=True)
 
     # load env_kwargs if existing
     env_kwargs = {}
@@ -351,6 +357,12 @@ if __name__ == "__main__":
             loaded_args = yaml.load(f, Loader=yaml.UnsafeLoader)  # pytype: disable=module-attr
             if loaded_args["env_kwargs"] is not None:
                 env_kwargs = loaded_args["env_kwargs"]
+
+    # render and record video by default
+    should_render = not args.no_render
+    if should_render:
+        env_kwargs.update(render_mode="rgb_array")
+
     # overwrite with command line arguments
     if args.env_kwargs is not None:
         env_kwargs.update(args.env_kwargs)
@@ -358,10 +370,10 @@ if __name__ == "__main__":
     eval_env = create_test_env(
         env_name.gym_id,
         n_envs=args.n_envs,
-        stats_path=stats_path,
+        stats_path=maybe_stats_path,
         seed=args.seed,
         log_dir=None,
-        should_render=not args.no_render,
+        should_render=should_render,
         hyperparams=deepcopy(hyperparams),
         env_kwargs=env_kwargs,
     )
@@ -371,13 +383,19 @@ if __name__ == "__main__":
         # Dummy buffer size as we don't need memory to enjoy the trained agent
         kwargs.update(dict(buffer_size=1))
 
+        # Hack due to breaking change in v1.6
+        # handle_timeout_termination cannot be at the same time
+        # with optimize_memory_usage
+        if "optimize_memory_usage" in hyperparams:
+            kwargs.update(optimize_memory_usage=False)
+
     # Note: we assume that we push models using the same machine (same python version)
     # that trained them, if not, we would need to pass custom object as in enjoy.py
-    custom_objects = {}
+    custom_objects: Dict[str, Any] = {}
     model = ALGOS[algo].load(model_path, env=eval_env, custom_objects=custom_objects, device=args.device, **kwargs)
 
     # Deterministic by default except for atari games
-    stochastic = args.stochastic or is_atari and not args.deterministic
+    stochastic = args.stochastic or (is_atari or is_minigrid) and not args.deterministic
     deterministic = not stochastic
 
     # Default model name, the model will be saved under "{algo}-{env_name}.zip"
@@ -405,6 +423,6 @@ if __name__ == "__main__":
         n_eval_episodes=10,
         token=None,
         local_repo_path="hub",
-        video_length=1000,
+        video_length=args.n_timesteps,
         generate_video=not args.no_render,
     )

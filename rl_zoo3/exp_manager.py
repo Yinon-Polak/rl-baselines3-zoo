@@ -9,11 +9,13 @@ from pathlib import Path
 from pprint import pprint
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import gym
+import gym as gym26
+import gymnasium as gym
 import numpy as np
 import optuna
 import torch as th
 import yaml
+from gymnasium import spaces
 from huggingface_sb3 import EnvironmentName
 from optuna.pruners import BasePruner, MedianPruner, NopPruner, SuccessiveHalvingPruner
 from optuna.samplers import BaseSampler, RandomSampler, TPESampler
@@ -23,7 +25,7 @@ from optuna.visualization import plot_optimization_history, plot_param_importanc
 from sb3_contrib.common.vec_env import AsyncEval
 
 # For using HER with GoalEnv
-from stable_baselines3 import HerReplayBuffer  # noqa: F401
+from stable_baselines3 import HerReplayBuffer
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, EvalCallback, ProgressBarCallback
 from stable_baselines3.common.env_util import make_vec_env
@@ -42,7 +44,7 @@ from stable_baselines3.common.vec_env import (
 )
 
 # For custom activation fn
-from torch import nn as nn  # noqa: F401
+from torch import nn as nn
 
 # Register custom envs
 import rl_zoo3.import_envs  # noqa: F401 pytype: disable=import-error
@@ -110,10 +112,10 @@ class ExperimentManager:
             default_path = Path(__file__).parent.parent
 
         self.config = config or str(default_path / f"hyperparams/{self.algo}.yml")
-        self.env_kwargs = {} if env_kwargs is None else env_kwargs
+        self.env_kwargs: Dict[str, Any] = {} if env_kwargs is None else env_kwargs
         self.n_timesteps = n_timesteps
         self.normalize = False
-        self.normalize_kwargs = {}
+        self.normalize_kwargs: Dict[str, Any] = {}
         self.env_wrapper = None
         self.frame_stack = None
         self.seed = seed
@@ -122,12 +124,12 @@ class ExperimentManager:
         self.vec_env_class = {"dummy": DummyVecEnv, "subproc": SubprocVecEnv}[vec_env_type]
         self.vec_env_wrapper = None
 
-        self.vec_env_kwargs = {}
+        self.vec_env_kwargs: Dict[str, Any] = {}
         # self.vec_env_kwargs = {} if vec_env_type == "dummy" else {"start_method": "fork"}
 
         # Callbacks
-        self.specified_callbacks = []
-        self.callbacks = []
+        self.specified_callbacks: List = []
+        self.callbacks: List[BaseCallback] = []
         self.save_freq = save_freq
         self.eval_freq = eval_freq
         self.n_eval_episodes = n_eval_episodes
@@ -135,8 +137,8 @@ class ExperimentManager:
 
         self.n_envs = 1  # it will be updated when reading hyperparams
         self.n_actions = None  # For DDPG/TD3 action noise objects
-        self._hyperparams = {}
-        self.monitor_kwargs = {}
+        self._hyperparams: Dict[str, Any] = {}
+        self.monitor_kwargs: Dict[str, Any] = {}
 
         self.trained_agent = trained_agent
         self.continue_training = trained_agent.endswith(".zip") and os.path.isfile(trained_agent)
@@ -157,7 +159,7 @@ class ExperimentManager:
         self.pruner = pruner
         self.n_startup_trials = n_startup_trials
         self.n_evaluations = n_evaluations
-        self.deterministic_eval = not self.is_atari(env_id)
+        self.deterministic_eval = not (self.is_atari(env_id) or self.is_minigrid(env_id))
         self.device = device
 
         # Logging
@@ -360,7 +362,7 @@ class ExperimentManager:
             del hyperparams["normalize"]
         return hyperparams
 
-    def _preprocess_hyperparams(
+    def _preprocess_hyperparams(  # noqa: C901
         self, hyperparams: Dict[str, Any]
     ) -> Tuple[Dict[str, Any], Optional[Callable], List[BaseCallback], Optional[Callable]]:
         self.n_envs = hyperparams.get("n_envs", 1)
@@ -474,7 +476,6 @@ class ExperimentManager:
         os.makedirs(self.params_path, exist_ok=True)
 
     def create_callbacks(self):
-
         if self.show_progress:
             self.callbacks.append(ProgressBarCallback())
 
@@ -512,24 +513,33 @@ class ExperimentManager:
             self.callbacks.append(eval_callback)
 
     @staticmethod
+    def entry_point(env_id: str) -> str:
+        try:
+            return str(gym.envs.registry[env_id].entry_point)  # pytype: disable=module-attr
+        except KeyError:
+            return str(gym26.envs.registry[env_id].entry_point)  # pytype: disable=module-attr
+
+    @staticmethod
     def is_atari(env_id: str) -> bool:
-        entry_point = gym.envs.registry.env_specs[env_id].entry_point  # pytype: disable=module-attr
-        return "AtariEnv" in str(entry_point)
+        return "AtariEnv" in ExperimentManager.entry_point(env_id)
+
+    @staticmethod
+    def is_minigrid(env_id: str) -> bool:
+        return "minigrid" in ExperimentManager.entry_point(env_id)
 
     @staticmethod
     def is_bullet(env_id: str) -> bool:
-        entry_point = gym.envs.registry.env_specs[env_id].entry_point  # pytype: disable=module-attr
-        return "pybullet_envs" in str(entry_point)
+        return "pybullet_envs" in ExperimentManager.entry_point(env_id)
 
     @staticmethod
     def is_robotics_env(env_id: str) -> bool:
-        entry_point = gym.envs.registry.env_specs[env_id].entry_point  # pytype: disable=module-attr
-        return "gym.envs.robotics" in str(entry_point) or "panda_gym.envs" in str(entry_point)
+        return "gym.envs.robotics" in ExperimentManager.entry_point(
+            env_id
+        ) or "panda_gym.envs" in ExperimentManager.entry_point(env_id)
 
     @staticmethod
     def is_panda_gym(env_id: str) -> bool:
-        entry_point = gym.envs.registry.env_specs[env_id].entry_point  # pytype: disable=module-attr
-        return "panda_gym.envs" in str(entry_point)
+        return "panda_gym.envs" in ExperimentManager.entry_point(env_id)
 
     def _maybe_normalize(self, env: VecEnv, eval_env: bool) -> VecEnv:
         """
@@ -590,10 +600,19 @@ class ExperimentManager:
         ):
             self.monitor_kwargs = dict(info_keywords=("is_success",))
 
-        # Define make_env here so it works with subprocesses
-        # when the registry was modified with `--gym-packages`
-        # See https://github.com/HumanCompatibleAI/imitation/pull/160
-        spec = gym.spec(self.env_name.gym_id)
+        # Make Pybullet compatible with gym 0.26
+        if self.is_bullet(self.env_name.gym_id):
+            spec = gym26.spec(self.env_name.gym_id)
+            self.env_kwargs.update(dict(apply_api_compatibility=True))
+        else:
+            # Define make_env here so it works with subprocesses
+            # when the registry was modified with `--gym-packages`
+            # See https://github.com/HumanCompatibleAI/imitation/pull/160
+            try:
+                spec = gym.spec(self.env_name.gym_id)
+            except gym.error.NameNotFound:
+                # Registered with gym 0.26
+                spec = gym26.spec(self.env_name.gym_id)
 
         def make_env(**kwargs) -> gym.Env:
             env = spec.make(**kwargs)
@@ -629,7 +648,7 @@ class ExperimentManager:
 
         if not is_vecenv_wrapped(env, VecTransposeImage):
             wrap_with_vectranspose = False
-            if isinstance(env.observation_space, gym.spaces.Dict):
+            if isinstance(env.observation_space, spaces.Dict):
                 # If even one of the keys is a image-space in need of transpose, apply transpose
                 # If the image spaces are not consistent (for instance one is channel first,
                 # the other channel last), VecTransposeImage will throw an error
@@ -706,7 +725,6 @@ class ExperimentManager:
         return pruner
 
     def objective(self, trial: optuna.Trial) -> float:
-
         kwargs = self._hyperparams.copy()
 
         # Hack to use DDPG/TD3 noise sampler
@@ -748,7 +766,7 @@ class ExperimentManager:
         # Use non-deterministic eval for Atari
         path = None
         if self.optimization_log_path is not None:
-            path = os.path.join(self.optimization_log_path, f"trial_{str(trial.number)}")
+            path = os.path.join(self.optimization_log_path, f"trial_{trial.number!s}")
         callbacks = get_callback_list({"callback": self.specified_callbacks})
         eval_callback = TrialEvalCallback(
             eval_env,
@@ -783,7 +801,7 @@ class ExperimentManager:
             print("============")
             print("Sampled hyperparams:")
             pprint(sampled_hyperparams)
-            raise optuna.exceptions.TrialPruned()
+            raise optuna.exceptions.TrialPruned() from e
         is_pruned = eval_callback.is_pruned
         reward = eval_callback.last_mean_reward
 
@@ -796,7 +814,6 @@ class ExperimentManager:
         return reward
 
     def hyperparameters_optimization(self) -> None:
-
         if self.verbose > 0:
             print("Optimizing hyperparameters")
 

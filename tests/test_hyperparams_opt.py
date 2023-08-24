@@ -47,6 +47,7 @@ def test_optimize(tmp_path, sampler, pruner, experiment):
     args = ["-n", str(N_STEPS), "--algo", algo, "--env", env_id, "-params", 'policy_kwargs:"dict(net_arch=[32])"', "n_envs:1"]
     args += ["n_steps:10"] if algo == "ppo" else []
     args += [
+        "--no-optim-plots",
         "--seed",
         "14",
         "--log-folder",
@@ -66,7 +67,7 @@ def test_optimize(tmp_path, sampler, pruner, experiment):
         "-optimize",
     ]
 
-    return_code = subprocess.call(["python", "train.py"] + args)
+    return_code = subprocess.call(["python", "train.py", *args])
     _assert_eq(return_code, 0)
 
 
@@ -99,7 +100,7 @@ def test_optimize_log_path(tmp_path):
         "-optimize",
     ]
 
-    return_code = subprocess.call(["python", "train.py"] + args)
+    return_code = subprocess.call(["python", "train.py", *args])
     _assert_eq(return_code, 0)
     print(optimization_log_path)
     assert os.path.isdir(optimization_log_path)
@@ -107,7 +108,7 @@ def test_optimize_log_path(tmp_path):
     assert os.path.isdir(os.path.join(optimization_log_path, "trial_1"))
     assert os.path.isfile(os.path.join(optimization_log_path, "trial_1", "evaluations.npz"))
 
-    study_path = list(glob.glob(str(tmp_path / algo / "report_*.pkl")))[0]
+    study_path = next(iter(glob.glob(str(tmp_path / algo / "report_*.pkl"))))
     print(study_path)
     # Test reading best trials
     args = [
@@ -120,7 +121,7 @@ def test_optimize_log_path(tmp_path):
         "-f",
         str(tmp_path / "best_hyperparameters"),
     ]
-    return_code = subprocess.call(["python", "scripts/parse_study.py"] + args)
+    return_code = subprocess.call(["python", "scripts/parse_study.py", *args])
     _assert_eq(return_code, 0)
 
 
@@ -166,7 +167,7 @@ def test_multiple_workers(tmp_path):
     workers = []
     for _ in range(n_workers):
         worker = subprocess.Popen(
-            ["python", "train.py"] + args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
+            ["python", "train.py", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
         )
         worker.wait()
         workers.append(worker)
