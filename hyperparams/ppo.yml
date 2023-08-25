@@ -1,5 +1,7 @@
 SnakeGameAIGym-v0:
-  policy: snake.small_cnn_policy.ActorCriticSmallCnnPolicy
+#  policy: snake.small_cnn_policy.ActorCriticSmallCnnPolicy
+  policy: snake.mlp_policy.ActorCriticMyPolicy
+#  policy: 'MlpPolicy'
   n_envs: 128
   n_steps: 8
   n_epochs: 10

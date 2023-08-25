@@ -49,7 +49,7 @@ class SnakeGameAIGym(gym.Env):
         self.w_pixels = int(self.w / BLOCK_SIZE)
         self.h_pixels = int(self.h / BLOCK_SIZE)
         self.n_blocks = self.w_pixels * self.h_pixels
-        self.screen_mat_shape = (self.h_pixels + 2, self.w_pixels + 2, 3)
+        self.screen_mat_shape = (self.h_pixels + 2, self.w_pixels + 2, 1)
         self.pygame_controller = PygameController(self.w, self.h,
                                                   BLOCK_SIZE) if self.use_pygame else DummyPygamController()
 
@@ -72,26 +72,28 @@ class SnakeGameAIGym(gym.Env):
         self.pixel_color_food = np.array(RED)
 
         self.action_space = spaces.Discrete(3)
-        self.observation_space = spaces.Box(low=0, high=255, shape=self.screen_mat_shape, dtype=np.uint8)
+        # self.observation_space = spaces.Box(low=-1.0, high=1001.0, shape=(884,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-1, high=1001, shape=(884,), dtype=np.int32)
 
         self.reset()
 
     def _get_state(self):
         pixel_mat = np.zeros(self.screen_mat_shape)
-        pixel_mat[:, :] = self.pixel_color_background
+        pixel_mat[:, :] = 0
 
         # border
-        pixel_mat[0, :] = self.pixel_color_border
-        pixel_mat[-1, :] = self.pixel_color_border
-        pixel_mat[:, 0] = self.pixel_color_border
-        pixel_mat[:, -1] = self.pixel_color_border
+        pixel_mat[0, :] = -1
+        pixel_mat[-1, :] = -1
+        pixel_mat[:, 0] = -1
+        pixel_mat[:, -1] = -1
 
-        pixel_mat[self.food.get_y_x_tuple()] = self.pixel_color_food
-        for body_point in self.snake:
-            pixel_mat[body_point.get_y_x_tuple()] = self.pixel_color_body
+        pixel_mat[self.food.get_y_x_tuple()] = 1000
+        for i, body_point in enumerate(self.snake, start=1):
+            pixel_mat[body_point.get_y_x_tuple()] = i
 
-        pixel_mat[self.head.get_y_x_tuple()] = self.pixel_color_snake_head
-        return pixel_mat.astype(np.uint8)
+        # pixel_mat[self.head.get_y_x_tuple()] = 5000
+        # result = pixel_mat / 1000
+        return pixel_mat.reshape(-1)
 
     def step(self, action):
         return self.play_step(action)
