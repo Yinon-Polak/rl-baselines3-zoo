@@ -7,6 +7,6 @@ from rl_zoo3.train import train
 
 # test callbacks, max episode callback and max is_looping termination
 project_name = "ppo_manual_params_tests"
-sys.argv = ["python", "--algo", "ppo", "--env", "SnakeGameAIGym-v0", "--track", "--wandb-project-name", project_name]
+sys.argv = ["python", "--algo", "ppo", "--env", "SnakeGameAIGym-v0"]  # , "--track", "--wandb-project-name", project_name]
 
 train()

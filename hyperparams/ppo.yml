@@ -10,22 +10,22 @@ SnakeGameAIGym-v0:
   vf_coef: 0.5
   ent_coef: 0.01
 #  policy_kwargs: 'dict(net_arch=[], ortho_init=True, features_extractor_kwargs="dict(initial_layer_out_channels=8, deep_layers_out_channels=16, kernel_size_1=3, kernel_size_2=1, padding_1 = 0)")'
-  callback:
-    - snake.callbacks.StopTrainingOnMaxEpisodes:
-        max_episodes: 200000
-        verbose: 1
-    - snake.callbacks.StopTrainingOnMaxIsLoopingCount:
-        max_is_looping_ratio_threshold: 0.3
-        min_episodes_count_before_termination: 300
-        verbose: 1
-    - snake.callbacks.TensorboardCallback:
-        verbose: 1
-    - wandb.integration.sb3.WandbCallback:
-        verbose: 0
-        model_save_path: models/model.zip
-        model_save_freq: 10
-        gradient_save_freq: 10
-        log: all
+#  callback:
+#    - snake.callbacks.StopTrainingOnMaxEpisodes:
+#        max_episodes: 200000
+#        verbose: 1
+#    - snake.callbacks.StopTrainingOnMaxIsLoopingCount:
+#        max_is_looping_ratio_threshold: 0.3
+#        min_episodes_count_before_termination: 300
+#        verbose: 1
+#    - snake.callbacks.TensorboardCallback:
+#        verbose: 1
+##    - wandb.integration.sb3.WandbCallback:
+##        verbose: 0
+##        model_save_path: models/model.zip
+##        model_save_freq: 10
+##        gradient_save_freq: 10
+##        log: all
 
 atari:
   env_wrapper:

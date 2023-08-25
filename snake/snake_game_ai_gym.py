@@ -1,33 +1,26 @@
 import copy
 import random
+from typing import Optional, Tuple
+
 import gym
 import numpy as np
-from gym import spaces
-from gym.spaces import Box
+from gym.core import ObsType
+from gymnasium import spaces
 
 from snake.pygame_controller import PygameController, DummyPygamController
 from snake.wrappers import Direction, Point, CLOCK_WISE, CollisionType
-
-
 
 # rgb colors
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 BLUE1 = (0, 0, 255)
 BLUE2 = (0, 100, 255)
-GREEN = (0,255,0)
+GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
 
 BLOCK_SIZE = 20
 
 KWARGS = {
-    "collision_types": [CollisionType.BOTH],
-    "n_steps_collision_check": 0,
-    "n_steps_proximity_check": 0,
-    "convert_proximity_to_bool": True,
-    "override_proximity_to_bool": True,
-    "add_prox_preferred_turn_0": False,
-    "add_prox_preferred_turn_1": False,
     "w": 640,
     "h": 480,
     "use_pygame": False,
@@ -60,7 +53,7 @@ class SnakeGameAIGym(gym.Env):
         self.pygame_controller = PygameController(self.w, self.h,
                                                   BLOCK_SIZE) if self.use_pygame else DummyPygamController()
 
-        #### vars that's are defined in reset()
+        # vars that are defined in reset()
         self.direction = None
         self.head = None
         self.snake = None
@@ -78,36 +71,27 @@ class SnakeGameAIGym(gym.Env):
         self.pixel_color_snake_head = np.array(GREEN)
         self.pixel_color_food = np.array(RED)
 
-
         self.action_space = spaces.Discrete(3)
-        self.observation_space = Box(low=0, high=255, shape=self.screen_mat_shape, dtype=np.uint8)
+        self.observation_space = spaces.Box(low=0, high=255, shape=self.screen_mat_shape, dtype=np.uint8)
 
         self.reset()
 
     def _get_state(self):
-        # try:
-            pixel_mat = np.zeros(self.screen_mat_shape)
-            pixel_mat[:, :] = self.pixel_color_background
+        pixel_mat = np.zeros(self.screen_mat_shape)
+        pixel_mat[:, :] = self.pixel_color_background
 
-            # border
-            pixel_mat[0, :] = self.pixel_color_border
-            pixel_mat[-1, :] = self.pixel_color_border
-            pixel_mat[:, 0] = self.pixel_color_border
-            pixel_mat[:, -1] = self.pixel_color_border
+        # border
+        pixel_mat[0, :] = self.pixel_color_border
+        pixel_mat[-1, :] = self.pixel_color_border
+        pixel_mat[:, 0] = self.pixel_color_border
+        pixel_mat[:, -1] = self.pixel_color_border
 
-            pixel_mat[self.food.get_y_x_tuple()] = self.pixel_color_food
-            for body_point in self.snake:
-                pixel_mat[body_point.get_y_x_tuple()] = self.pixel_color_body
+        pixel_mat[self.food.get_y_x_tuple()] = self.pixel_color_food
+        for body_point in self.snake:
+            pixel_mat[body_point.get_y_x_tuple()] = self.pixel_color_body
 
-            pixel_mat[self.head.get_y_x_tuple()] = self.pixel_color_snake_head
-            return pixel_mat.astype(np.uint8)
-
-
-        # except Exception as e:
-        #     import matplotlib.pyplot as plt
-        #     plt.imshow(pixel_mat / 255, cmap='Greys', interpolation='nearest')
-        #     plt.show()
-        #     print(e)
+        pixel_mat[self.head.get_y_x_tuple()] = self.pixel_color_snake_head
+        return pixel_mat.astype(np.uint8)
 
     def step(self, action):
         return self.play_step(action)
@@ -115,11 +99,16 @@ class SnakeGameAIGym(gym.Env):
     def render(self, mode="human"):
         pass
 
-    def reset(self):
+    def reset(
+            self,
+            *,
+            seed: Optional[int] = None,
+            options: Optional[dict] = None,
+    ) -> Tuple[ObsType, dict]:
         # init game state
         self.direction = Direction.RIGHT
 
-        self.head = Point(self.w / 2, self.h / 2)
+        self.head = Point(self.w // 2, self.h // 2)
         self.snake = [self.head,
                       Point(self.head.x - BLOCK_SIZE, self.head.y),
                       Point(self.head.x - (2 * BLOCK_SIZE), self.head.y)]
@@ -132,7 +121,7 @@ class SnakeGameAIGym(gym.Env):
         self._place_food()
         self.frame_iteration = 0
 
-        return self._get_state()
+        return self._get_state(), dict()
 
     def _place_food(self):
         x = random.randint(0, (self.w - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
@@ -158,12 +147,11 @@ class SnakeGameAIGym(gym.Env):
             game_over = True
             self.n_games += 1
             reward = self.negative_reward
-            info = {"score": self.score}
-            info["is_looping"] = len(set(self.last_trail[:100])) < 6
+            info = {"score": self.score, "is_looping": len(set(self.last_trail[:100])) < 6}
             if should_early_terminate:
                 info["TimeLimit.truncated"] = True
 
-            return self._get_state(), reward, game_over, info
+            return self._get_state(), reward, game_over, False, info
 
         # 4. place new food or just move
         if self.head == self.food:
@@ -183,7 +171,7 @@ class SnakeGameAIGym(gym.Env):
 
         # info = {"score": self.score, "is_looping": False}
         info = {"score": self.score}
-        return self._get_state(), reward, game_over, info
+        return self._get_state(), reward, game_over, False, info
 
     def is_collision(self, collision_type: CollisionType = CollisionType.BOTH, pt: Point = None):
         if pt is None:
@@ -248,4 +236,3 @@ def head_to_global_direction(current_direction, action) -> Direction:
         new_dir = CLOCK_WISE[next_idx]  # left turn r -> u -> l -> d
 
     return new_dir
-
