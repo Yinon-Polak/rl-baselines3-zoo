@@ -46,7 +46,7 @@ class TransformerModel(BaseFeaturesExtractor):
     """
 
     def __init__(self, observation_space: spaces.Space) -> None:
-        super().__init__(observation_space, features_dim=1536)
+        super().__init__(observation_space, features_dim=1768)
         self.gpt_model = GPTLanguageModel()
 
     def forward(self, observations: th.Tensor) -> th.Tensor:

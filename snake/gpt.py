@@ -4,7 +4,7 @@ from torch.nn import functional as F
 
 # hyperparameters
 batch_size = 64  # how many independent sequences will we process in parallel?
-block_size = 768  # what is the maximum context length for predictions?
+block_size = 884  # what is the maximum context length for predictions?
 max_iters = 5000
 eval_interval = 500
 learning_rate = 3e-4
@@ -103,7 +103,7 @@ class GPTLanguageModel(nn.Module):
         super().__init__()
         # each token directly reads off the logits for the next token from a lookup table
         self.token_embedding_table = nn.Embedding(1001, n_embd, padding_idx=0)
-        self.position_embedding_table = nn.Embedding(768, n_embd)
+        self.position_embedding_table = nn.Embedding(884, n_embd)
         self.blocks = nn.Sequential(*[Block(n_embd, n_head=n_head) for _ in range(n_layer)])
         self.ln_f = nn.LayerNorm(n_embd)  # final layer norm
         self.lm_head = nn.Linear(n_embd, 2)

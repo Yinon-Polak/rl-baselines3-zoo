@@ -49,7 +49,7 @@ class SnakeGameAIGym(gym.Env):
         self.w_pixels = int(self.w / BLOCK_SIZE)
         self.h_pixels = int(self.h / BLOCK_SIZE)
         self.n_blocks = self.w_pixels * self.h_pixels
-        self.screen_mat_shape = (self.h_pixels, self.w_pixels, 1)
+        self.screen_mat_shape = (self.h_pixels + 2, self.w_pixels + 2, 1)
         self.pygame_controller = PygameController(self.w, self.h,
                                                   BLOCK_SIZE) if self.use_pygame else DummyPygamController()
 
@@ -145,6 +145,7 @@ class SnakeGameAIGym(gym.Env):
             if should_early_terminate:
                 info["TimeLimit.truncated"] = True
 
+            crumb = self.snake.pop()
             return self._get_state(), reward, game_over, False, info
 
         # 4. place new food or just move
@@ -230,3 +231,14 @@ def head_to_global_direction(current_direction, action) -> Direction:
         new_dir = CLOCK_WISE[next_idx]  # left turn r -> u -> l -> d
 
     return new_dir
+
+
+if __name__ == '__main__':
+    env = SnakeGameAIGym()
+    env.play_step(2)
+    # env.play_step(1)
+    print("self._get_state(), reward, game_over, False, info")
+    for i in range(100):
+        result = env.play_step(0)
+        # print(result[0].reshape(1, 26, -1))
+        print(result[1:])
