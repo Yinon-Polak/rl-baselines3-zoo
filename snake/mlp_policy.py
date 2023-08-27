@@ -34,6 +34,24 @@ from stable_baselines3.common.utils import get_device, is_vectorized_observation
 
 from stable_baselines3.common.policies import ActorCriticPolicy
 
+from snake.gpt import GPTLanguageModel
+
+
+class TransformerModel(BaseFeaturesExtractor):
+    """
+    Feature extract that flatten the input.
+    Used as a placeholder when feature extraction is not needed.
+
+    :param observation_space:
+    """
+
+    def __init__(self, observation_space: spaces.Space) -> None:
+        super().__init__(observation_space, features_dim=1536)
+        self.gpt_model = GPTLanguageModel()
+
+    def forward(self, observations: th.Tensor) -> th.Tensor:
+        return self.gpt_model(observations)
+
 
 class ActorCriticMyPolicy(ActorCriticPolicy):
     """
@@ -72,7 +90,7 @@ class ActorCriticMyPolicy(ActorCriticPolicy):
             observation_space: spaces.Space,
             action_space: spaces.Space,
             lr_schedule: Schedule,
-            net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = None,
+            net_arch: Optional[Union[List[int], Dict[str, List[int]]]] = [],
             activation_fn: Type[nn.Module] = nn.Tanh,
             ortho_init: bool = True,
             use_sde: bool = False,
@@ -80,7 +98,7 @@ class ActorCriticMyPolicy(ActorCriticPolicy):
             full_std: bool = True,
             use_expln: bool = False,
             squash_output: bool = False,
-            features_extractor_class: Type[BaseFeaturesExtractor] = FlattenExtractor,
+            features_extractor_class: Type[BaseFeaturesExtractor] = TransformerModel,
             features_extractor_kwargs: Optional[Dict[str, Any]] = None,
             share_features_extractor: bool = True,
             normalize_images: bool = False,

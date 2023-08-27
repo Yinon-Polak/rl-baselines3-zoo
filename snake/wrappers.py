@@ -26,7 +26,7 @@ class Point:
     block_size: int = 20
 
     def _pixel_index(self, a):
-        return int(a // self.block_size) + 1  # add one for border, the range of x is (-20,w), for y its (-20,h)
+        return int(a // self.block_size)
 
     def get_y_x_tuple(self):
         return self._pixel_index(self.y), self._pixel_index(self.x)
