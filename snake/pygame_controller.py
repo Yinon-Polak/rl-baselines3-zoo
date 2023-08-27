@@ -48,7 +48,7 @@ class PygameController:
 
     def __init__(self, w, h, block_size):
         pygame.init()
-        font_path = Path(__file__) / 'arial.ttf'
+        font_path = Path(__file__).parent / 'arial.ttf'
         self.font = pygame.font.Font(font_path, 25)
         self.block_size = block_size
 
