@@ -98,7 +98,7 @@ class Block(nn.Module):
 
 
 class PixelMatBorderEmbedding(nn.Module):
-    def __init__(self, pixel_mat_len_dim_1, pixel_mat_len_dim_2, embedding_dim):
+    def __init__(self, pixel_mat_len_dim_1, pixel_mat_len_dim_2, embedding_dim, device):
         super().__init__()
         num_embeddings = pixel_mat_len_dim_1 * pixel_mat_len_dim_2
         t = torch.arange(num_embeddings)
@@ -113,7 +113,7 @@ class PixelMatBorderEmbedding(nn.Module):
         self.index_mapping.update([(x, 2) for x in bottom_border_indexes])
         self.index_mapping.update([(x, 3) for x in left_border_indexes])
         self.index_mapping.update([(x, 4) for x in right_border_indexes])
-        self.embedding = nn.Embedding(num_embeddings, embedding_dim, padding_idx=0)
+        self.embedding = nn.Embedding(num_embeddings, embedding_dim, padding_idx=0).to(device)
 
     def forward(self, input):
         mapped_input = torch.tensor([self.index_mapping.setdefault(i.item(), 0) for i in input], dtype=torch.long)
@@ -127,7 +127,7 @@ class GPTLanguageModel(nn.Module):
         # each token directly reads off the logits for the next token from a lookup table
         self.token_embedding_table = nn.Embedding(1001, n_embd, padding_idx=0)
         self.position_embedding_table = nn.Embedding(884, n_embd)
-        self.border_embedding_table = PixelMatBorderEmbedding(26, 34, n_embd)
+        self.border_embedding_table = PixelMatBorderEmbedding(26, 34, n_embd, device)
         self.blocks = nn.Sequential(*[Block(n_embd, n_head=n_head) for _ in range(n_layer)])
         self.ln_f = nn.LayerNorm(n_embd)  # final layer norm
         self.lm_head = nn.Linear(n_embd, 2)
