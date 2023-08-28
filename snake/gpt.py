@@ -116,7 +116,10 @@ class PixelMatBorderEmbedding(nn.Module):
         self.embedding = nn.Embedding(num_embeddings, embedding_dim, padding_idx=0).to(device)
 
     def forward(self, input):
-        mapped_input = torch.tensor([self.index_mapping.setdefault(i.item(), 0) for i in input], dtype=torch.long)
+        mapped_input = torch.tensor([self.index_mapping.setdefault(i.item(), 0) for i in input],
+                                    dtype=torch.long,
+                                    device=device)
+
         return self.embedding(mapped_input)
 
 
